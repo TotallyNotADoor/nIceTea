@@ -86,7 +86,23 @@ class AnimatedSprite : public AtlasSprite {
 };
 
 class AnimatedSpriteEx : public AnimatedSprite {
-	//ToDo
+	protected:
+		struct AnimationData {
+			unsigned int StartPos;
+			unsigned int EndPos;
+			unsigned int OneFrameLength;
+		};
+		unsigned int CurrentAnimation;
+	public:
+		vector<AnimationData> AnimationSpan;
+		AnimatedSpriteEx();
+		AnimatedSpriteEx(const string& path, unsigned int number_of_animations);
+		AnimatedSpriteEx(Image image, unsigned int number_of_animations);
+
+		void SetAnimation(unsigned int animation);
+		void ChangeAnimation(unsigned int change);
+
+		void Draw() const override;
 };
 
 class PhysicsObject : public virtual GameObject {
@@ -108,21 +124,23 @@ class PhysicsObject : public virtual GameObject {
 		void ApplyForce(Vector2 force);
 
 		bool IsCollidingWithLevel();
+		bool IsGrounded();
 	protected:
 		bool IsCollidingWithCurrentCollider();
+		bool IsGroundedGeneralCollisionVersion();
 	public:
 		void MoveAndCollide();
 		void TickPhysics();
 };
 
-class PhysicsEntity : public PhysicsObject, public AnimatedSprite {
+class PhysicsEntity : public PhysicsObject, public AnimatedSpriteEx {
 	public:
-		PhysicsEntity(const string& path, unsigned int frames, unsigned int fpf);
-		PhysicsEntity(Image image, unsigned int frames, unsigned int fpf);
-		PhysicsEntity(float gravity_strength, float friction, const string& path, unsigned int frames, unsigned int fpf);
-		PhysicsEntity(float gravity_strength, float friction, Image image, unsigned int frames, unsigned int fpf);
-		PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, const string& path, unsigned int frames, unsigned int fpf);
-		PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, Image image, unsigned int frames, unsigned int fpf);
+		PhysicsEntity(const string& path, unsigned int number_of_animations);
+		PhysicsEntity(Image image, unsigned int number_of_animations);
+		PhysicsEntity(float gravity_strength, float friction, const string& path, unsigned int number_of_animations);
+		PhysicsEntity(float gravity_strength, float friction, Image image, unsigned int number_of_animations);
+		PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, const string& path, unsigned int number_of_animations);
+		PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, Image image, unsigned int number_of_animations);
 
 
 };

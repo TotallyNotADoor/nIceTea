@@ -60,10 +60,10 @@ Sprite::~Sprite() {
 /******** AtlasSprite ********/
 AtlasSprite::AtlasSprite() : Sprite(), Frame(UINT_NAN), Frames(UINT_NAN) {}
 AtlasSprite::AtlasSprite(const string& path, unsigned int frames) : Sprite(path), Frames(frames), Frame(0) {
-	AtlasPos.resize(frames);
+	if(frames != UINT_NAN) AtlasPos.resize(frames);
 }
 AtlasSprite::AtlasSprite(Image image, unsigned int frames) : Sprite(image), Frames(frames), Frame(0) {
-	AtlasPos.resize(frames);
+	if(frames != UINT_NAN) AtlasPos.resize(frames);
 }
 void AtlasSprite::SetFrame(unsigned int frame) {
 	Frame = frame%Frames;
@@ -100,7 +100,30 @@ void AnimatedSprite::UpdateAnimation() {
 
 /******** AnimatedSpriteEx ********/
 
-//ToDo
+AnimatedSpriteEx::AnimatedSpriteEx() : AnimatedSprite() {
+	SetAnimation(0);
+}
+AnimatedSpriteEx::AnimatedSpriteEx(const string& path, unsigned int number_of_animations) : AnimatedSprite(path, UINT_NAN, UINT_NAN) {
+	AnimationSpan.resize(number_of_animations);
+}
+AnimatedSpriteEx::AnimatedSpriteEx(Image image, unsigned int number_of_animations) : AnimatedSprite(image, UINT_NAN, UINT_NAN) {
+	AnimationSpan.resize(number_of_animations);
+}
+void AnimatedSpriteEx::SetAnimation(unsigned int animation) {
+	CurrentAnimation = animation;
+	Frame = 0;
+	Frames = (AnimationSpan[animation].EndPos - AnimationSpan[animation].StartPos) + 1;
+	FramesPerFrame = AnimationSpan[animation].OneFrameLength;
+	Timer = 0;
+}
+void AnimatedSpriteEx::ChangeAnimation(unsigned int change) {
+	unsigned int animation = CurrentAnimation + change;
+	animation = animation%AnimationSpan.size();
+	SetAnimation(animation);
+}
+void AnimatedSpriteEx::Draw() const {
+	if(Texture.id > 0 && Frame != UINT_NAN) DrawTextureRec(Texture, AtlasPos[Frame + AnimationSpan[CurrentAnimation].StartPos], Position, WHITE);
+}
 
 /******** PhysicsObject ********/
 PhysicsObject::PhysicsObject() {
@@ -147,6 +170,20 @@ bool PhysicsObject::IsCollidingWithLevel() {
 	}
 	return false;
 }
+bool PhysicsObject::IsGrounded() {
+	bool grounded = false;
+	Hitbox.y += 1.0f;
+	if(IsCollidingWithLevel()) grounded = true;
+	Hitbox.y -= 1.0f;
+	return grounded;
+}
+bool PhysicsObject::IsGroundedGeneralCollisionVersion() {
+	bool grounded = false;
+	Hitbox.y += 1.0f;
+	if(IsCollidingWithCurrentCollider()) grounded = true;
+	Hitbox.y -= 1.0f;
+	return grounded;
+}
 bool PhysicsObject::IsCollidingWithCurrentCollider() {
 	if(CurrentCollisionID != UINT_NAN && CurrentCollisionID < LevelHitboxes.size()) {
 		return CheckCollisionRecs(LevelHitboxes[CurrentCollisionID].Hitbox, Hitbox);
@@ -154,10 +191,10 @@ bool PhysicsObject::IsCollidingWithCurrentCollider() {
 	return false;
 }
 void PhysicsObject::MoveAndCollide() {
+	Grounded = false;
 	Position.x += Velocity.x;
 	Hitbox.x = Position.x;
 	if(IsCollidingWithLevel()) {
-		Grounded = true;
 		short direction = Sign(Velocity.x);;
 		if(direction != 0) {
 			while(IsCollidingWithCurrentCollider()) {
@@ -165,14 +202,14 @@ void PhysicsObject::MoveAndCollide() {
 				Hitbox.x = Position.x;
 			}
 		}
+		Position.x = std::round(Position.x);
+		Hitbox.x = Position.x;
 		Velocity.x = 0.0f;
 		CurrentCollisionID = UINT_NAN;
 	}
-
 	Position.y += Velocity.y;
 	Hitbox.y = Position.y;
 	if(IsCollidingWithLevel()) {
-		Grounded = true;
 		short direction = Sign(Velocity.y);
 		if(direction != 0) {
 			while(IsCollidingWithCurrentCollider()) {
@@ -180,10 +217,15 @@ void PhysicsObject::MoveAndCollide() {
 				Hitbox.y = Position.y;
 			}
 		}
+		Position.y = std::round(Position.y);
+		Hitbox.y = Position.y;
 		Velocity.y = 0.0f;
+		if(IsGroundedGeneralCollisionVersion()) {
+				Grounded = true;
+		}
 		CurrentCollisionID = UINT_NAN;
+
 	}
-	else Grounded = false;
 }
 void PhysicsObject::TickPhysics() {
 	ApplyFriction(false);
@@ -192,20 +234,20 @@ void PhysicsObject::TickPhysics() {
 }
 
 /******** PhysicsEntity ********/
-	PhysicsEntity::PhysicsEntity(const string& path, unsigned int frames, unsigned int fpf)
-	: PhysicsObject(), AnimatedSprite(path, frames, fpf) {}
+	PhysicsEntity::PhysicsEntity(const string& path, unsigned int number_of_animations)
+	: PhysicsObject(), AnimatedSpriteEx(path, number_of_animations) {}
 
-	PhysicsEntity::PhysicsEntity(Image image, unsigned int frames, unsigned int fpf)
-	: PhysicsObject(), AnimatedSprite(image, frames, fpf) {}
+	PhysicsEntity::PhysicsEntity(Image image, unsigned int number_of_animations)
+	: PhysicsObject(), AnimatedSpriteEx(image, number_of_animations) {}
 
-	PhysicsEntity::PhysicsEntity(float gravity_strength, float friction, const string& path, unsigned int frames, unsigned int fpf)
-	: PhysicsObject(gravity_strength, friction), AnimatedSprite(path, frames, fpf) {}
+	PhysicsEntity::PhysicsEntity(float gravity_strength, float friction, const string& path, unsigned int number_of_animations)
+	: PhysicsObject(gravity_strength, friction), AnimatedSpriteEx(path, number_of_animations) {}
 
-	PhysicsEntity::PhysicsEntity(float gravity_strength, float friction, Image image, unsigned int frames, unsigned int fpf)
-	: PhysicsObject(gravity_strength, friction), AnimatedSprite(image, frames, fpf) {}
+	PhysicsEntity::PhysicsEntity(float gravity_strength, float friction, Image image, unsigned int number_of_animations)
+	: PhysicsObject(gravity_strength, friction), AnimatedSpriteEx(image, number_of_animations) {}
 
-	PhysicsEntity::PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, const string& path, unsigned int frames, unsigned int fpf)
-	: PhysicsObject(gravity_strength, friction, max_velocity), AnimatedSprite(path, frames, fpf) {}
+	PhysicsEntity::PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, const string& path, unsigned int number_of_animations)
+	: PhysicsObject(gravity_strength, friction, max_velocity), AnimatedSpriteEx(path, number_of_animations) {}
 
-	PhysicsEntity::PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, Image image, unsigned int frames, unsigned int fpf)
-	: PhysicsObject(gravity_strength, friction, max_velocity), AnimatedSprite(image, frames, fpf) {}
+	PhysicsEntity::PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, Image image, unsigned int number_of_animations)
+	: PhysicsObject(gravity_strength, friction, max_velocity), AnimatedSpriteEx(image, number_of_animations) {}

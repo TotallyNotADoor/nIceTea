@@ -12,12 +12,11 @@ int main() {
 	//Variable definitions
 
 	auto UpdateDrawFrame = [&]() {
-		float dt = GetFrameTime();	  //delta time
-
+		float dt = GetFrameTime();	//delta time
 		BeginDrawing();
 
 		ClearBackground({ 20, 20, 30, 255 });
-		DrawText("Hello there.", 530, 320, 40, BLACK);
+		DrawText("Hello there.", 530, 320, 40, RAYWHITE);
 		EndDrawing();
 	};
 
