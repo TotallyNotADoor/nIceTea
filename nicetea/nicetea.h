@@ -39,7 +39,8 @@ class Sprite : public virtual GameObject {
 
 		Sprite();
 		explicit Sprite(const string& path);
-		Sprite(Image image);
+		explicit Sprite(Image image);
+		explicit Sprite(Texture2D texture);
 
 		Sprite(Sprite&& other) noexcept;
 		Sprite& operator=(Sprite&& other) noexcept;
@@ -48,6 +49,7 @@ class Sprite : public virtual GameObject {
 		Sprite& operator=(const Sprite&) = delete;
 
 		void MakeTexture();
+		void SetTexture(Texture2D texture);
 		virtual void Draw() const;
 
 		virtual ~Sprite();
@@ -63,6 +65,7 @@ class AtlasSprite : public Sprite {
 		AtlasSprite();
 		AtlasSprite(const string& path, unsigned int frames);
 		AtlasSprite(Image image, unsigned int frames);
+		AtlasSprite(Texture2D texture, unsigned int frames);
 
 		void SetFrame(unsigned int frame);
 		void ChangeFrame(unsigned int change);
@@ -79,6 +82,7 @@ class AnimatedSprite : public AtlasSprite {
 		AnimatedSprite();
 		AnimatedSprite(const string& path, unsigned int frames, unsigned int fpf);
 		AnimatedSprite(Image image, unsigned int frames, unsigned int fpf);
+		AnimatedSprite(Texture2D texture, unsigned int frames, unsigned int fpf);
 
 		void SetTimer(unsigned int timer);
 		void ChangeTimer(unsigned int change);
@@ -98,6 +102,7 @@ class AnimatedSpriteEx : public AnimatedSprite {
 		AnimatedSpriteEx();
 		AnimatedSpriteEx(const string& path, unsigned int number_of_animations);
 		AnimatedSpriteEx(Image image, unsigned int number_of_animations);
+		AnimatedSpriteEx(Texture2D texture, unsigned int number_of_animations);
 
 		void SetAnimation(unsigned int animation);
 		void ChangeAnimation(unsigned int change);
@@ -106,6 +111,9 @@ class AnimatedSpriteEx : public AnimatedSprite {
 };
 
 class PhysicsObject : public virtual GameObject {
+	protected:
+		bool IsCollidingWithCurrentCollider();
+		bool IsGroundedGeneralCollisionVersion();
 	public:
 		Rectangle Hitbox;
 		Vector2 Velocity;
@@ -114,33 +122,25 @@ class PhysicsObject : public virtual GameObject {
 		float Friction;
 		float GravityStrength;
 		unsigned int CurrentCollisionID;
+		bool TouchingWall;
 		bool Grounded;
 		PhysicsObject();
 		PhysicsObject(float gravity_strength, float friction);
 		PhysicsObject(float gravity_strength, float friction, Vector2 max_velocity);
 
 		void ApplyFriction(bool affect_y);
-		void ApplyGravity();
 		void ApplyForce(Vector2 force);
 
 		bool IsCollidingWithLevel();
 		bool IsGrounded();
-	protected:
-		bool IsCollidingWithCurrentCollider();
-		bool IsGroundedGeneralCollisionVersion();
-	public:
 		void MoveAndCollide();
 		void TickPhysics();
 };
 
 class PhysicsEntity : public PhysicsObject, public AnimatedSpriteEx {
 	public:
-		PhysicsEntity(const string& path, unsigned int number_of_animations);
-		PhysicsEntity(Image image, unsigned int number_of_animations);
-		PhysicsEntity(float gravity_strength, float friction, const string& path, unsigned int number_of_animations);
-		PhysicsEntity(float gravity_strength, float friction, Image image, unsigned int number_of_animations);
 		PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, const string& path, unsigned int number_of_animations);
 		PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, Image image, unsigned int number_of_animations);
-
+		PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, Texture2D texture, unsigned int number_of_animations);
 
 };
