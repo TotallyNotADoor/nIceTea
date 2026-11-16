@@ -1,4 +1,4 @@
-#include "nicetea/nicetea.h"
+#include "nicetea.h"
 
 #if defined(PLATFORM_WEB)
 	#include <emscripten.h>

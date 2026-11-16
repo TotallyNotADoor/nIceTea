@@ -1,6 +1,10 @@
 #include "nicetea.h"
+#include "raylib.h"
 
-vector<LevelHitbox> LevelHitboxes;
+vector<unsigned int> Keybinds;
+
+vector<LevelHitbox> LevelGeometry;
+vector<Trigger> LevelTriggers;
 
 /******** LevelLoader ********/
 bool LoadLevel(const string &path) {
@@ -16,22 +20,26 @@ GameObject::GameObject() {
 }
 
 /******** Sprite ********/
-Sprite::Sprite(){
+Sprite::Sprite() {
 	Texture = { 0, 0, 0, 0, 0 };
 	Asset = {nullptr, 0, 0, 0, 0};
+	TextureDimetions = {0.0f, 0.0f};
 }
 Sprite::Sprite(const string& path) {
 	Texture = { 0, 0, 0, 0, 0 };
 	Asset = LoadImage(path.c_str());
+	TextureDimetions = {static_cast<float>(Asset.width), static_cast<float>(Asset.height)};
 	MakeTexture();
 }
 Sprite::Sprite(Image image) {
 	Texture = { 0, 0, 0, 0, 0 };
 	Asset = image;
+	TextureDimetions = {static_cast<float>(Asset.width), static_cast<float>(Asset.height)};
 	MakeTexture();
 }
 Sprite::Sprite(Texture2D texture) {
 	Texture = texture;
+	TextureDimetions = {static_cast<float>(Texture.width), static_cast<float>(Texture.height)};
 	Asset = {nullptr, 0, 0, 0, 0};
 }
 Sprite::Sprite(Sprite&& other) noexcept : Texture(other.Texture), Asset(other.Asset) {
@@ -174,26 +182,25 @@ void PhysicsObject::ApplyForce(Vector2 force) {
 	Velocity = Vector2Clamp(Velocity, Vector2Negate(MaxVelocity), MaxVelocity);
 }
 bool PhysicsObject::IsCollidingWithLevel() {
-	for(size_t i = 0; i < LevelHitboxes.size(); ++i) {
-		if(LevelHitboxes[i].Active && CheckCollisionRecs(Hitbox, LevelHitboxes[i].Hitbox)) {
+	for(size_t i = 0; i < LevelGeometry.size(); ++i) {
+		if(LevelGeometry[i].Active && CheckCollisionRecs(Hitbox, LevelGeometry[i].Hitbox)) {
 				CurrentCollisionID = static_cast<unsigned int>(i);
 				return true;
 		}
 	}
 	return false;
 }
-bool PhysicsObject::IsGrounded() {
-	bool grounded = false;
-	Hitbox.y += 1.0f;
-	if(IsCollidingWithLevel()) grounded = true;
-	Hitbox.y -= 1.0f;
-	return grounded;
-}
 bool PhysicsObject::IsCollidingWithCurrentCollider() {
-	if(CurrentCollisionID != UINT_NAN && CurrentCollisionID < LevelHitboxes.size()) {
-		return CheckCollisionRecs(LevelHitboxes[CurrentCollisionID].Hitbox, Hitbox);
+	if(CurrentCollisionID != UINT_NAN && CurrentCollisionID < LevelGeometry.size()) {
+		return CheckCollisionRecs(LevelGeometry[CurrentCollisionID].Hitbox, Hitbox);
 	}
 	return false;
+}
+void PhysicsObject::CheckTriggerCollisions() {
+	CurrentTriggerCollisions.clear();
+	for(Trigger i : LevelTriggers) {
+		if(i.Active && CheckCollisionRecs(Hitbox, i.Hitbox)) CurrentTriggerCollisions.push_back(i.ID);
+	}
 }
 void PhysicsObject::MoveAndCollide() {
 	TouchingWall = false;
@@ -240,11 +247,6 @@ void PhysicsObject::MoveAndCollide() {
 
 	}
 }
-void PhysicsObject::TickPhysics() {
-	ApplyFriction(false);
-	if(!Grounded) ApplyForce(Vector2Scale(Gravity, GravityStrength));
-	MoveAndCollide();
-}
 
 /******** PhysicsEntity ********/
 	PhysicsEntity::PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, const string& path, unsigned int number_of_animations)
@@ -255,3 +257,37 @@ void PhysicsObject::TickPhysics() {
 
 	PhysicsEntity::PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, Texture2D texture, unsigned int number_of_animations)
 	: PhysicsObject(gravity_strength, friction, max_velocity), AnimatedSpriteEx(texture, number_of_animations) {}
+
+/******** Standalone Functions ********/
+bool IsRectVisibleOnScreen(Rectangle rect, Camera2D camera) {
+	Vector2 topLeft = GetScreenToWorld2D((Vector2){ 0, 0 }, camera);
+    Vector2 bottomRight = GetScreenToWorld2D(
+        (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() },
+        camera
+    );
+
+    Rectangle view = {
+        topLeft.x,
+        topLeft.y,
+        bottomRight.x - topLeft.x,
+        bottomRight.y - topLeft.y
+    };
+
+    return CheckCollisionRecs(rect, view);
+}
+bool IsSpriteVisibleOnScreen(Sprite sprite, Camera2D camera) {
+	Vector2 topLeft = GetScreenToWorld2D((Vector2){ 0, 0 }, camera);
+    Vector2 bottomRight = GetScreenToWorld2D(
+        (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() },
+        camera
+    );
+
+    Rectangle view = {
+        topLeft.x,
+        topLeft.y,
+        bottomRight.x - topLeft.x,
+        bottomRight.y - topLeft.y
+    };
+
+    return CheckCollisionRecs({sprite.Position.x, sprite.Position.y, sprite.TextureDimetions.x, sprite.TextureDimetions.y}, view);
+}

@@ -9,12 +9,20 @@ using namespace std;
 
 constexpr unsigned int UINT_NAN = UINT_MAX;
 
-struct LevelHitbox{
+extern vector<unsigned int> Keybinds;
+
+struct LevelHitbox {
 	Rectangle Hitbox;
 	bool Active;
 };
+struct Trigger {
+	unsigned int ID;
+    Rectangle Hitbox;
+    bool Active;
+};
 
-extern vector<LevelHitbox> LevelHitboxes;
+extern vector<Trigger> LevelTriggers;
+extern vector<LevelHitbox> LevelGeometry;
 
 bool LoadLevel(const string& path);
 bool SaveLevel(const string& path);
@@ -36,6 +44,7 @@ class Sprite : public virtual GameObject {
 		Texture2D Texture;
 	public:
 		Image Asset;
+		Vector2 TextureDimetions;
 
 		Sprite();
 		explicit Sprite(const string& path);
@@ -54,6 +63,14 @@ class Sprite : public virtual GameObject {
 
 		virtual ~Sprite();
 };
+
+struct LevelSprite {
+	Sprite Visual;
+	bool Active;
+
+	explicit LevelSprite(Texture2D texture) : Visual(texture), Active(true){};
+};
+extern vector<LevelSprite> LevelVisuals;
 
 class AtlasSprite : public Sprite {
 	protected:
@@ -113,7 +130,6 @@ class AnimatedSpriteEx : public AnimatedSprite {
 class PhysicsObject : public virtual GameObject {
 	protected:
 		bool IsCollidingWithCurrentCollider();
-		bool IsGroundedGeneralCollisionVersion();
 	public:
 		Rectangle Hitbox;
 		Vector2 Velocity;
@@ -121,6 +137,7 @@ class PhysicsObject : public virtual GameObject {
 		Vector2 Gravity;
 		float Friction;
 		float GravityStrength;
+		vector<unsigned int>CurrentTriggerCollisions;
 		unsigned int CurrentCollisionID;
 		bool TouchingWall;
 		bool Grounded;
@@ -131,10 +148,9 @@ class PhysicsObject : public virtual GameObject {
 		void ApplyFriction(bool affect_y);
 		void ApplyForce(Vector2 force);
 
+		void CheckTriggerCollisions();
 		bool IsCollidingWithLevel();
-		bool IsGrounded();
 		void MoveAndCollide();
-		void TickPhysics();
 };
 
 class PhysicsEntity : public PhysicsObject, public AnimatedSpriteEx {
@@ -142,5 +158,7 @@ class PhysicsEntity : public PhysicsObject, public AnimatedSpriteEx {
 		PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, const string& path, unsigned int number_of_animations);
 		PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, Image image, unsigned int number_of_animations);
 		PhysicsEntity(float gravity_strength, float friction, Vector2 max_velocity, Texture2D texture, unsigned int number_of_animations);
-
 };
+
+bool IsRectVisibleOnScreen(Rectangle rect, Camera2D camera);
+bool IsSpriteVisibleOnScreen(Sprite sprite, Camera2D camera);
