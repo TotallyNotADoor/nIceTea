@@ -9,7 +9,7 @@ using namespace std;
 
 constexpr unsigned int UINT_NAN = UINT_MAX;
 
-extern vector<unsigned int> Keybinds;
+inline vector<unsigned int> Keybinds;
 
 struct LevelHitbox {
 	Rectangle Hitbox;
@@ -21,8 +21,8 @@ struct Trigger {
     bool Active;
 };
 
-extern vector<Trigger> LevelTriggers;
-extern vector<LevelHitbox> LevelGeometry;
+inline vector<Trigger> LevelTriggers;
+inline vector<LevelHitbox> LevelGeometry;
 
 bool LoadLevel(const string& path);
 bool SaveLevel(const string& path);
@@ -70,7 +70,7 @@ struct LevelSprite {
 
 	explicit LevelSprite(Texture2D texture) : Visual(texture), Active(true){};
 };
-extern vector<LevelSprite> LevelVisuals;
+inline vector<LevelSprite> LevelVisuals;
 
 class AtlasSprite : public Sprite {
 	protected:
@@ -161,4 +161,4 @@ class PhysicsEntity : public PhysicsObject, public AnimatedSpriteEx {
 };
 
 bool IsRectVisibleOnScreen(Rectangle rect, Camera2D camera);
-bool IsSpriteVisibleOnScreen(Sprite sprite, Camera2D camera);
+bool IsSpriteVisibleOnScreen(const Sprite& sprite, Camera2D camera);

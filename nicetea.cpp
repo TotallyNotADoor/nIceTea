@@ -1,11 +1,6 @@
 #include "nicetea.h"
 #include "raylib.h"
 
-vector<unsigned int> Keybinds;
-
-vector<LevelHitbox> LevelGeometry;
-vector<Trigger> LevelTriggers;
-
 /******** LevelLoader ********/
 bool LoadLevel(const string &path) {
 	return false;

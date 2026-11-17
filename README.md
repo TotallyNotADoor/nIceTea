@@ -1,5 +1,5 @@
 ## nIceTea
-A crude, feature-poor game framework badly written in C++ with [Raylib](https://github.com/raysan5/raylib)   
+A crude, feature-poor game framework badly written in C++ with [Raylib](https://github.com/raysan5/raylib) and [nlohmann's json](https://github.com/nlohmann/json)   
 
 Features:   
 1.  Easier rendering
